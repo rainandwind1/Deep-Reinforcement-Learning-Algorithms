@@ -6,7 +6,7 @@ import collections
 from collections import deque
 from torch import nn, optim
 
-embedding_size = 32
+embedding_size = 64
 
 '''
 name: q value net
@@ -14,7 +14,7 @@ description:
 '''
 class Q_net(nn.Module):
     def __init__(self, args):
-        super(q_net, self).__init__()
+        super(Q_net, self).__init__()
         self.input_size, self.output_size = args
         self.q_net = nn.Sequential(
             nn.Linear(self.input_size, embedding_size),
@@ -75,7 +75,7 @@ class ReplayBuffer(object):
 
     def sample_batch(self, batch_size = 32):
         transition_batch = random.sample(self.buffer, batch_size)
-        batch_data_ls = [[] * len(transition_batch[0])]
+        batch_data_ls = [[] for _ in transition_batch[0]]
         for trans in transition_batch:
             for data_id, data in enumerate(trans):
                 batch_data_ls[data_id].append(data)
