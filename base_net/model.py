@@ -43,22 +43,22 @@ class Policy_net(nn.Module):
         return self.actor(inputs)
 
 
-'''
-name: determined policy net
-description: for continuous control
-'''
-class Policy_net_determined(nn.Module):
-    def __init__(self, args):
-        super(Policy_net_determined, self).__init__()
-        self.input_size, self.output_size = args
-        self.actor = nn.Sequential(
-            nn.Linear(self.input_size, embedding_size),
-            nn.ReLU(),
-            nn.Linear(embedding_size, self.output_size)
-        )
+# '''
+# name: determined policy net
+# description: for continuous control
+# '''
+# class Policy_net_determined(nn.Module):
+#     def __init__(self, args):
+#         super(Policy_net_determined, self).__init__()
+#         self.input_size, self.output_size = args
+#         self.actor = nn.Sequential(
+#             nn.Linear(self.input_size, embedding_size),
+#             nn.ReLU(),
+#             nn.Linear(embedding_size, self.output_size)
+#         )
 
-    def forward(self, inputs):
-        return self.actor(inputs)
+#     def forward(self, inputs):
+#         return self.actor(inputs)
 
 
 '''

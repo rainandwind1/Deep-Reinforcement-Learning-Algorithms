@@ -39,20 +39,25 @@ class DDPG(nn.Module):
 
     def get_policy_op(self, inputs):
         raw_op = self.actor(inputs)
+        op = torch.tanh(raw_op) * (self.action_max - self.action_min) / 2
         if self.clamp:
-            raw_op = torch.clamp(raw_op, self.action_min, self.action_max)
-        return raw_op
+            op = torch.clamp(op, self.action_min, self.action_max)
+        return op
 
     def get_target_policy_op(self, inputs):
         raw_op = self.target_actor(inputs)
+        op = torch.tanh(raw_op) * (self.action_max - self.action_min) / 2
         if self.clamp:
-            raw_op = torch.clamp(raw_op, self.action_min, self.action_max)
-        return raw_op
+            op = torch.clamp(op, self.action_min, self.action_max)
+        return op
 
     def selection_action(self, inputs, epsilon, eval_mode = False):
         actor_op = self.get_policy_op(inputs)
+        actor_op = torch.tanh(actor_op) * (self.action_max - self.action_min) / 2
         noise = torch.randn(actor_op.shape).to(self.device) if not eval_mode else 0.        # Gaussi noise
-        actor_op += noise * epsilon
+        # actor_op += noise * epsilon
+        if self.clamp:
+            actor_op = torch.clamp(actor_op, self.action_min, self.action_max)
         return actor_op.detach().cpu().numpy()
 
     def save_trans(self, transition):
@@ -73,7 +78,7 @@ class DDPG(nn.Module):
         # cal policy loss
         actor_loss = self.critic(torch.cat([s, self.get_policy_op(s)], -1))
         # cal critic loss
-        q_val = self.critic(torch.cat([s, self.get_policy_op(s).detach()] ,-1))
+        q_val = self.critic(torch.cat([s, a] ,-1))
         target_q_val = r + gamma * self.target_critic(torch.cat([s_next, self.get_target_policy_op(s_next).detach()], -1)) * (1 - done)
         critic_loss = (q_val - target_q_val.detach()) ** 2
 
