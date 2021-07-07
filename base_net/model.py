@@ -81,3 +81,14 @@ class ReplayBuffer(object):
                 batch_data_ls[data_id].append(data)
         
         return batch_data_ls
+
+    def sample_all_data(self):
+        batch_data_ls = [[] for _ in self.buffer[0]]
+        for trans in self.buffer:
+            for data_id, data in enumerate(trans):
+                batch_data_ls[data_id].append(data)
+        
+        return batch_data_ls
+
+    def clear(self):
+        self.buffer.clear()
