@@ -89,13 +89,15 @@ class DDPG(nn.Module):
         
         self.update_target_net()
 
-
-# ddpg test
+'''
+DDPG test
+''' 
 if __name__ == "__main__":
     
     # hyper param
     epsilon = 0.3
     batch_size = 32
+    render = False
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
     total_step = 0
@@ -106,7 +108,11 @@ if __name__ == "__main__":
         s = env.reset()
         score = 0.
         epsilon = max(0.01, epsilon * 0.999)
+        
         for t in range(200):
+            if render:
+                env.render()
+
             total_step += 1
             action = model.selection_action(torch.FloatTensor(s).to(device), epsilon)
 
