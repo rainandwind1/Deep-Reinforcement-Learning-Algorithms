@@ -1,5 +1,5 @@
 # Deep-Reinforcement-Learning-Algorithms
-&nbsp;&nbsp; This is a reconstruction of previous repository(rl-algorithms). Most algorithms in it are base algorithms in recent deep reinforcement learning domain.  
+This is a reconstruction of previous repository(rl-algorithms). Most algorithms in it are base algorithms in recent deep reinforcement learning domain.  
 
 
 Algorithms  | Paper URL|
