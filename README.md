@@ -8,5 +8,7 @@ Algorithms  | Year | Paper URL|
 [DDPG](https://github.com/rainandwind1/Deep-Reinforcement-Learning-Algorithms/blob/master/policy_based/DDPG.py)  | 2015 | https://arxiv.org/abs/1509.02971 |
 [A3C]()  | 2016 | https://arxiv.org/abs/1602.01783 |
 [PPO](https://github.com/rainandwind1/Deep-Reinforcement-Learning-Algorithms/blob/master/policy_based/PPO.py)  | 2017 | https://arxiv.org/abs/1707.06347 |
-[ActorCritic](https://github.com/rainandwind1/Deep-Reinforcement-Learning-Algorithms/blob/master/policy_based/ActorCritic.py)  | -- | -- |
+[TD3]()  | 2018 | https://arxiv.org/abs/1802.09477 |
 [SAC]()  | 2018 | https://arxiv.org/abs/1801.01290 |
+[ActorCritic](https://github.com/rainandwind1/Deep-Reinforcement-Learning-Algorithms/blob/master/policy_based/ActorCritic.py)  | -- | -- |
+
