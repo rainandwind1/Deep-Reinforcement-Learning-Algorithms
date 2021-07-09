@@ -26,12 +26,11 @@ class ActorCritic(nn.Module):
         self.buffer.save_trans(transition)
 
     def to_tensor(self, items):
-        s, a, r, s_next, a_prob, done = items
+        s, a, r, s_next, done = items
         s = torch.FloatTensor(s).to(self.device)
         a = torch.LongTensor(a).to(self.device)
         r = torch.FloatTensor(r).to(self.device)
         s_next = torch.FloatTensor(s_next).to(self.device)
-        a_prob = torch.FloatTensor(a_prob).to(self.device)
         done = torch.FloatTensor(done).to(self.device)
 
         return s, a.unsqueeze(-1), r.unsqueeze(-1), s_next, done.unsqueeze(-1)
@@ -40,7 +39,7 @@ class ActorCritic(nn.Module):
         action_prob = self.get_policy(inputs)
         action = Categorical(action_prob)
         action = action.sample().item()
-        return action, action_prob.detach().cpu().numpy()[action]
+        return action
 
     def train(self, gamma = 0.98):
         s, a, r, s_next, done = self.to_tensor(self.buffer.sample_all_data())
@@ -71,10 +70,10 @@ if __name__ == "__main__":
         s = env.reset()
         score = 0.
         for t in range(200):
-            action, a_prob = model.selection_action(torch.FloatTensor(s).to(device))
+            action = model.selection_action(torch.FloatTensor(s).to(device))
 
             s_next, reward, done, info = env.step(action)
-            model.save_trans((s, action, reward, s_next, a_prob, done))
+            model.save_trans((s, action, reward, s_next, done))
             score += reward 
             s = s_next
             if done:
