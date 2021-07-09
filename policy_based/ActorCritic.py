@@ -58,6 +58,24 @@ class ActorCritic(nn.Module):
 
         self.buffer.clear()
 
+    def train_for_a3c(self, replay_buffer, gamma = 0.98):
+        s, a, r, s_next, done = self.to_tensor(replay_buffer.sample_all_data())
+        
+        q_val = self.critic(s)
+        target_q_val = r + gamma * self.critic(s_next) * (1 - done)
+        advantage = target_q_val.detach() - q_val
+        loss_critic = advantage ** 2
+
+        loss_actor = -torch.log(self.get_policy(s).gather(-1, a)) * advantage.detach()
+        loss = loss_actor.mean() + loss_critic.mean()
+
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+
+        replay_buffer.clear()
+
+
 
 '''
 ActorCritic test
