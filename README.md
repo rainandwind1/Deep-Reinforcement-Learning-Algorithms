@@ -5,6 +5,7 @@ This is a reconstruction of previous repository(rl-algorithms). Most algorithms 
 Algorithms  | Year | Paper URL|
 | :---: | :---:| :---:|
 [DQN](https://github.com/rainandwind1/Deep-Reinforcement-Learning-Algorithms/blob/master/value_based/DQN.py)  | 2013 | https://www.cs.toronto.edu/~vmnih/docs/dqn.pdf |
+[DRQN](https://github.com/rainandwind1/Deep-Reinforcement-Learning-Algorithms/blob/master/value_based/DRQN.py)  | 2015 | https://arxiv.org/abs/1507.06527 |
 [ActorCritic](https://github.com/rainandwind1/Deep-Reinforcement-Learning-Algorithms/blob/master/policy_based/ActorCritic.py)  | -- | -- |
 [DDPG](https://github.com/rainandwind1/Deep-Reinforcement-Learning-Algorithms/blob/master/policy_based/DDPG.py)  | 2015 | https://arxiv.org/abs/1509.02971 |
 [A3C](https://github.com/rainandwind1/Deep-Reinforcement-Learning-Algorithms/blob/master/policy_based/A3C.py)  | 2016 | https://arxiv.org/abs/1602.01783 |
