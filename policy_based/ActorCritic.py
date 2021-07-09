@@ -35,7 +35,7 @@ class ActorCritic(nn.Module):
 
         return s, a.unsqueeze(-1), r.unsqueeze(-1), s_next, done.unsqueeze(-1)
 
-    def selection_action(self, inputs):
+    def select_action(self, inputs):
         action_prob = self.get_policy(inputs)
         action = Categorical(action_prob)
         action = action.sample().item()
@@ -70,7 +70,7 @@ if __name__ == "__main__":
         s = env.reset()
         score = 0.
         for t in range(200):
-            action = model.selection_action(torch.FloatTensor(s).to(device))
+            action = model.select_action(torch.FloatTensor(s).to(device))
 
             s_next, reward, done, info = env.step(action)
             model.save_trans((s, action, reward, s_next, done))

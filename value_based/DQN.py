@@ -18,7 +18,7 @@ class DQN(nn.Module):
         self.optimizer = optim.Adam(self.q_net.parameters(), lr = self.lr)
         self.update_target_net()
 
-    def selection_action(self, inputs, epsilon):
+    def select_action(self, inputs, epsilon):
         q_val = self.q_net(inputs)
         coin = np.random.rand()
         if coin > epsilon:
@@ -85,7 +85,7 @@ if __name__ == "__main__":
             if render:
                 env.render()
 
-            a = model.selection_action(torch.FloatTensor(s).to(device), epsilon = epsilon)
+            a = model.select_action(torch.FloatTensor(s).to(device), epsilon = epsilon)
 
             s_next, reward, done, info = env.step(a)
 

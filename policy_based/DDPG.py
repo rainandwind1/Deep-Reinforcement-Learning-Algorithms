@@ -51,7 +51,7 @@ class DDPG(nn.Module):
             op = torch.clamp(op, self.action_min, self.action_max)
         return op
 
-    def selection_action(self, inputs, epsilon, eval_mode = False):
+    def select_action(self, inputs, epsilon, eval_mode = False):
         actor_op = self.get_policy_op(inputs)
         actor_op = torch.tanh(actor_op) * (self.action_max - self.action_min) / 2
         noise = torch.randn(actor_op.shape).to(self.device) if not eval_mode else 0.        # Gaussi noise
@@ -114,7 +114,7 @@ if __name__ == "__main__":
                 env.render()
 
             total_step += 1
-            action = model.selection_action(torch.FloatTensor(s).to(device), epsilon)
+            action = model.select_action(torch.FloatTensor(s).to(device), epsilon)
 
             s_next, reward, done, info = env.step(action)
             model.save_trans((s, action, reward, s_next, done))

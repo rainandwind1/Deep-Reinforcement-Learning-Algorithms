@@ -25,7 +25,7 @@ class PPO(nn.Module):
         softmax_op = F.softmax(policy_op, -1)
         return softmax_op
     
-    def selection_action(self, inputs):
+    def select_action(self, inputs):
         action_prob = self.get_policy_op(inputs)
         action = Categorical(action_prob)
         action = action.sample().item()
@@ -96,7 +96,7 @@ if __name__ == "__main__":
             if render:
                 env.render()
 
-            a, a_prob = model.selection_action(torch.FloatTensor(obs).to(device))
+            a, a_prob = model.select_action(torch.FloatTensor(obs).to(device))
             obs_next, r, done, info = env.step(a)
 
             model.save_trans((obs, a, r, obs_next, a_prob, done))
