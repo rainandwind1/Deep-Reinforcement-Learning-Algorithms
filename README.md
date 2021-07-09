@@ -7,4 +7,4 @@ Algorithms  | Paper URL|
 DQN  | https://www.cs.toronto.edu/~vmnih/docs/dqn.pdf |
 PPO  | https://arxiv.org/abs/1707.06347 |
 DDPG  | https://arxiv.org/abs/1509.02971 |
-
+ActorCritic  | -- |
