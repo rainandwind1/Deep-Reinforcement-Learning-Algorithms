@@ -34,7 +34,7 @@ class ActorCritic(nn.Module):
         a_prob = torch.FloatTensor(a_prob).to(self.device)
         done = torch.FloatTensor(done).to(self.device)
 
-        return s, a.unsqueeze(-1), r.unsqueeze(-1), s_next, a_prob.unsqueeze(-1), done.unsqueeze(-1)
+        return s, a.unsqueeze(-1), r.unsqueeze(-1), s_next, done.unsqueeze(-1)
 
     def selection_action(self, inputs):
         action_prob = self.get_policy(inputs)
@@ -43,13 +43,14 @@ class ActorCritic(nn.Module):
         return action, action_prob.detach().cpu().numpy()[action]
 
     def train(self, gamma = 0.98):
-        s, a, r, s_next, a_prob, done = self.to_tensor(self.buffer.sample_all_data())
+        s, a, r, s_next, done = self.to_tensor(self.buffer.sample_all_data())
         
         q_val = self.critic(s)
         target_q_val = r + gamma * self.critic(s_next) * (1 - done)
-        loss_critic = (q_val - target_q_val.detach()) ** 2
+        advantage = target_q_val.detach() - q_val
+        loss_critic = advantage ** 2
 
-        loss_actor = -torch.log(a_prob) * q_val.detach()
+        loss_actor = -torch.log(self.get_policy(s).gather(-1, a)) * advantage.detach()
         loss = loss_actor.mean() + loss_critic.mean()
 
         self.optimizer.zero_grad()
