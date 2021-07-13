@@ -70,7 +70,7 @@ class SAC(nn.Module):
         dist = Normal(mu, sigma)
         z = dist.rsample()
         action_vec = torch.tanh(z)
-        log_prob = dist.log_prob(z) - torch.log(1 - action_vec.pow(2) + torch.FloatTensor([1e-7]).to(self.device)).sum(1, keepdim=True)
+        log_prob = dist.log_prob(z) - torch.log(1 - action_vec.pow(2) + torch.FloatTensor([1e-7]).to(self.device))
         return action_vec, log_prob
 
     def train(self, gamma = 0.98, batch_size = 32, alpha = 0.6):
