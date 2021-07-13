@@ -1,7 +1,11 @@
 # Deep-Reinforcement-Learning-Algorithms
-This is a reconstruction of previous repository(rl-algorithms). Most algorithms in it are base algorithms in recent deep reinforcement learning domain.(click any one you want)  
-
-
+## Introduction  
+This is a reconstruction of previous repository(rl-algorithms). Most algorithms in it are base algorithms in recent deep reinforcement learning domain(click any one you want).  
+## Requirements
+- python 3.8.3  
+- pytorch >= 1.6.0
+- gym 0.18.0
+## Paper List
 Index| Algorithms  | Year | Paper URL|
 | :---: | :---: | :---:| :---:|
 | 1 |[DQN](https://github.com/rainandwind1/Deep-Reinforcement-Learning-Algorithms/blob/master/value_based/DQN.py)  | 2013 | https://www.cs.toronto.edu/~vmnih/docs/dqn.pdf |
