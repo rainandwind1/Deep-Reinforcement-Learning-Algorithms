@@ -9,9 +9,9 @@ from torch import nn, optim
 import torch.nn.functional as F
 from torch.distributions import Categorical
 
-class OPAC(nn.Module):
+class OptionCritic(nn.Module):
     def __init__(self, args):
-        super(OPAC, self).__init__()
+        super(OptionCritic, self).__init__()
         self.input_size, self.output_size, self.device, self.lr = args
         self.actor = Policy_net(args = (self.input_size, self.output_size))
         self.critic = Q_net(args = (self.input_size, 1))
@@ -78,7 +78,7 @@ class OPAC(nn.Module):
 
 
 '''
-Option ActorCritic test
+OptionCritic test
 '''
 if __name__ == "__main__":
     env = gym.make("CartPole-v0")
