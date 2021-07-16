@@ -65,7 +65,7 @@ class IQN(nn.Module):
 
 
 '''
-DQN test
+IQN test
 '''
 if __name__ == "__main__":
 
