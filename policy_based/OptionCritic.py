@@ -110,11 +110,12 @@ if __name__ == "__main__":
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model = OptionCritic(args = (4, 4, 2,  device, 1e-3)).to(device)
     epsilon = 0.5
-    macro_id_pre = 0
+
     for i in range(10000):
         s = env.reset()
         score = 0.
         epsilon = max(0.01, epsilon * 0.999)
+        macro_id_pre = model.get_option_id(torch.FloatTensor(s).to(device), epsilon)        # initialize
         for t in range(200):
             action, macro_id = model.select_action(torch.FloatTensor(s).to(device), epsilon, macro_id_pre)
 
