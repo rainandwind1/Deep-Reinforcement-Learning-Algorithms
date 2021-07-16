@@ -7,22 +7,22 @@ sys.path.append("./")
 from base_net.model import *
 from torch import nn, optim
 
-class DQN(nn.Module):
+class IQN(nn.Module):
     def __init__(self, args):
-        super(DQN, self).__init__()
+        super(IQN, self).__init__()
         self.input_size, self.output_size, self.mem_size, self.device, self.lr = args
-        self.q_net = Q_net(args = (self.input_size, self.output_size))
-        self.target_q_net = Q_net(args = (self.input_size, self.output_size))
+        self.q_net = IQN_qnet(args = (self.input_size, self.output_size))
+        self.target_q_net = IQN_qnet(args = (self.input_size, self.output_size))
         
         self.replay_buffer = ReplayBuffer(args = (self.mem_size))
         self.optimizer = optim.Adam(self.q_net.parameters(), lr = self.lr)
         self.update_target_net()
 
-    def select_action(self, inputs, epsilon):
-        q_val = self.q_net(inputs)
+    def select_action(self, inputs, epsilon, k_sample = 32):
+        q_val = self.q_net(inputs, k_sample)[0].squeeze(0)
         coin = np.random.rand()
         if coin > epsilon:
-            return torch.argmax(q_val).detach().cpu().numpy().item()
+            return torch.argmax(q_val.mean(-1)).detach().cpu().numpy().item()
         else:
             return random.sample(range(self.output_size), 1)[0]
 
@@ -43,13 +43,21 @@ class DQN(nn.Module):
         return s, a.unsqueeze(-1), r.unsqueeze(-1), s_next, done.unsqueeze(-1)
 
 
-    def train(self, gamma = 0.98, batch_size = 32):
+    def train(self, N = 32, N_target = 32, gamma = 0.98, batch_size = 32):
         s, a, r, s_next, done = self.to_tensor(self.replay_buffer.sample_batch(batch_size))
-        q_val = self.q_net(s).gather(-1, a)
-        target_q = r + gamma * torch.max(self.target_q_net(s_next).detach(), -1, keepdim=True)[0] * (1 - done)
+        q_val, toi = self.q_net(s, N)
+        z = torch.stack([q_val[i].index_select(0, a[i]) for i in range(batch_size)]).squeeze(1).unsqueeze(-1)
 
-        td_error = (q_val - target_q.detach()) ** 2
-        loss = td_error.mean()
+        a_best = self.target_q_net(s_next, N_target)[0].mean(-1).argmax(1)
+        z_target, toi_target = self.target_q_net(s_next, N_target)
+        z_target = torch.stack([z_target[i].index_select(0, a_best[i]) for i in range(batch_size)]).squeeze(1)
+        z_target = (r + gamma * z_target * (1 - done)).unsqueeze(-2)
+        delta_ij = z_target.detach() - z
+        
+        toi = toi.unsqueeze(0)
+        weight = torch.abs(toi - delta_ij.le(0.).float())
+        loss = F.smooth_l1_loss(z, z_target.detach())
+        loss = (weight * loss).mean(-1).mean(-1).mean(-1)
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
@@ -68,13 +76,13 @@ if __name__ == "__main__":
     batch_size = 32
     gamma = 0.98
     mem_size = 20000
-    update_target_interval = 200
+    update_target_interval = 300
     lr = 1e-3
     total_step = 0
 
     env = gym.make("CartPole-v1")
 
-    model = DQN(args = (4, 2, mem_size, device, lr)).to(device)
+    model = IQN(args = (4, 2, mem_size, device, lr)).to(device)
     epsilon = 0.8
     for ep_i in range(10000):
         epsilon = max(0.01, epsilon * 0.999)
@@ -85,7 +93,7 @@ if __name__ == "__main__":
             if render:
                 env.render()
 
-            a = model.select_action(torch.FloatTensor(s).to(device), epsilon = epsilon)
+            a = model.select_action(torch.FloatTensor(s).to(device).unsqueeze(0), epsilon = epsilon)
 
             s_next, reward, done, info = env.step(a)
 

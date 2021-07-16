@@ -2,9 +2,11 @@ import torch
 import numpy as np
 import random
 import collections
+import torch.nn.functional as F
 
 from collections import deque
 from torch import nn, optim
+
 
 embedding_size = 64
 rnn_embedding_size = 32
@@ -25,6 +27,34 @@ class Q_net(nn.Module):
 
     def forward(self, inputs):
         return self.q_net(inputs)
+
+'''
+name: q value net for iqn
+description: 
+'''
+class IQN_qnet(nn.Module):
+    def __init__(self, args):
+        super(IQN_qnet, self).__init__()
+        self.input_size, self.output_size = args
+        self.embedding_net = nn.Linear(self.input_size, 32)
+        self.phi = nn.Linear(1, 32, bias = False)
+        self.phi_bias = nn.Parameter(torch.randn(1, 32), requires_grad = True)
+        self.fc = nn.Sequential(
+            nn.Linear(32, 64),
+            nn.ReLU(),
+            nn.Linear(64, self.output_size)
+        )
+        
+
+    def forward(self, inputs, toi_num = 64):
+        toi = torch.FloatTensor(np.random.uniform(size = (toi_num, 1))).to(inputs.device)
+        Num = torch.FloatTensor(range(64)).to(inputs.device)
+        cos_op = torch.cos(Num * toi * np.pi).unsqueeze(-1)
+        p = self.embedding_net(inputs)
+        embedding_op = self.embedding_net(inputs).view(inputs.shape[0], -1).unsqueeze(1)
+        phi = F.relu(self.phi(cos_op).mean(1) + self.phi_bias).unsqueeze(0)
+        q_val_dis = self.fc(embedding_op * phi).transpose(1, 2)
+        return q_val_dis, toi
 
 
 '''
