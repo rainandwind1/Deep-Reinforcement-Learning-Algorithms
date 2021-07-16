@@ -17,4 +17,4 @@ Index| Algorithms  | Year | Paper URL|
 | 7 |[PPO](https://github.com/rainandwind1/Deep-Reinforcement-Learning-Algorithms/blob/master/policy_based/PPO.py)  | 2017 | https://arxiv.org/abs/1707.06347 |
 | 8 |[TD3](https://github.com/rainandwind1/Deep-Reinforcement-Learning-Algorithms/blob/master/policy_based/TD3.py)  | 2018 | https://arxiv.org/abs/1802.09477 |
 | 9 |[SAC](https://github.com/rainandwind1/Deep-Reinforcement-Learning-Algorithms/blob/master/policy_based/SAC.py)  | 2018 | https://arxiv.org/abs/1801.01290 |
-
+| 10 |[IQN](https://github.com/rainandwind1/Deep-Reinforcement-Learning-Algorithms/blob/master/policy_based/IQN.py)  | 2018 | https://arxiv.org/pdf/1806.06923.pdf|
