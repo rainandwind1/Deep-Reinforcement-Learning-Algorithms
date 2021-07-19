@@ -18,7 +18,7 @@ class PPO(nn.Module):
         self.critic = Q_net(args = (self.input_size, self.output_size))
 
         self.buffer = ReplayBuffer(args = (10000))
-        self.optimizer = optim.Adam([{'params':self.actor.parameters()}, {'params':self.critic.parameters()}], lr = self.lr)
+        self.optimizer = optim.Adam(self.parameters(), lr = self.lr)
 
     def get_policy_op(self, inputs):
         policy_op = self.actor(inputs)
