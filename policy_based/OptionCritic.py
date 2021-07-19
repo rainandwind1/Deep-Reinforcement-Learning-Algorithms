@@ -15,9 +15,8 @@ class OptionCritic(nn.Module):
         self.input_size, self.option_num, self.output_size, self.device, self.lr = args
         self.macro_policy = Q_net(args = (self.input_size, self.option_num))
         self.terminated_net = nn.Linear(self.input_size, self.option_num)
-        self.option_actor = Policy_net(args = (self.input_size, self.output_size))
         # option ls
-        self.option_ls = nn.ModuleList([self.option_actor for _ in range(self.option_num)])
+        self.option_ls = nn.ModuleList([Policy_net(args = (self.input_size, self.output_size)) for _ in range(self.option_num)])
 
         self.replay_buffer = ReplayBuffer(args = (30000))
         self.optimizer = optim.Adam(self.parameters(), lr = self.lr)    
@@ -31,6 +30,7 @@ class OptionCritic(nn.Module):
             return random.sample(range(self.option_num), 1)[0]
     
     def get_policy(self, inputs, option_id):
+        p = self.option_ls[option_id](inputs)
         return F.softmax(self.option_ls[option_id](inputs), -1)
 
     def get_termination_op(self, inputs):
@@ -82,7 +82,7 @@ class OptionCritic(nn.Module):
         # loss actor & terminated net
         log_action_prob_ls = []
         for i in range(s.shape[0]):
-            log_action_prob = torch.log(self.get_policy(s[i], macro_id[i])[a[i]])
+            log_action_prob = torch.log(self.get_policy(s[i], macro_id[i])[a[i]] + 1e-6)   # torch inputs available > 0
             log_action_prob_ls.append(log_action_prob)
         log_action_prob = torch.stack(log_action_prob_ls, 0)
         policy_loss = - (q_target.detach() - q_val).detach() * log_action_prob
@@ -103,27 +103,37 @@ class OptionCritic(nn.Module):
 OptionCritic test
 '''
 if __name__ == "__main__":
-    on_off = True
+    on_off = False
     env = gym.make("CartPole-v0")
     batch_size = 32
     train_flag = False
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    device = 'cpu'# 'cuda' if torch.cuda.is_available() else 'cpu'
     model = OptionCritic(args = (4, 4, 2,  device, 1e-3)).to(device)
     epsilon = 0.5
+   
 
     for i in range(10000):
         s = env.reset()
         score = 0.
         epsilon = max(0.01, epsilon * 0.999)
         macro_id_pre = model.get_option_id(torch.FloatTensor(s).to(device), epsilon)        # initialize
+        
+        # for cal change rate of the terminatial
+        macro_id_change_cnt = 0
+        epi_step_cnt = 0
+        
         for t in range(200):
             action, macro_id = model.select_action(torch.FloatTensor(s).to(device), epsilon, macro_id_pre)
+
+            if macro_id != macro_id_pre:
+                macro_id_change_cnt += 1
 
             s_next, reward, done, info = env.step(action)
             model.save_trans((s, macro_id, action, reward, s_next, done))
             score += reward 
             s = s_next
             macro_id_pre = macro_id
+            epi_step_cnt += 1
 
             # update off policy
             if not on_off:
@@ -136,4 +146,4 @@ if __name__ == "__main__":
         if on_off:
             train_flag = True
             model.train(on_off = on_off)
-        print("Epoch:{}    Score:{}    Training:{}    epislon:{}".format(i+1, score, train_flag, epsilon))
+        print("Epoch:{}    Score:{}    Training:{}    epislon:{:.3}    macro id change_rate:{:.3}".format(i+1, score, train_flag, epsilon, macro_id_change_cnt / epi_step_cnt))
