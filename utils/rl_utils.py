@@ -54,9 +54,12 @@ class Logger(object):
             with open(os.path.join(self.data_path, '{}.json'.format(filename)),'w') as f:
                 json.dump(self.mem_dict, f)
 
-    def add_data_to_memory(self, data_name, data):
+    def save_data(self, data_name, data, auto_save = True):
         self.mem_dict[data_name] = self.mem_dict.get(data_name, [])
         self.mem_dict[data_name].append(data)
+        if auto_save:
+            self.save_to_csv(data_name)
+            self.save_to_json(data_name)
 
     def plot(self):
         # wait to write/add/supply/update
@@ -72,6 +75,6 @@ if __name__ == "__main__":
     for i in range(100):
         data = 2 * i
         logger.log_info(data_name = 'index', data = data, time_stamp = i)
-        logger.add_data_to_memory(data_name = 'index', data = i)
-    logger.save_to_csv(filename = 'test')
-    logger.save_to_json(filename = 'test')
+        logger.save_data(data_name = 'index', data = i)
+    # logger.save_to_csv(filename = 'test')
+    # logger.save_to_json(filename = 'test')
