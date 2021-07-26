@@ -6,6 +6,7 @@ import pandas as pd
 import datetime
 
 from torch.utils.tensorboard import SummaryWriter
+import matplotlib.pyplot as plt
 
 '''
 description: 日志工具
@@ -19,10 +20,11 @@ class Logger(object):
         self.output_path = os.path.join(self.output_path, self.create_time)
         self.log_path = os.path.join(self.output_path, 'log')
         self.data_path = os.path.join(self.output_path, 'data')
+        self.fig_path = os.path.join(self.output_path, 'fig')
         # summary writer
         '''
         使用：tensorboard --logdir=yourlogpath
-        example: tensorboard --logdir=./output/0724-2221/log/
+        command example: tensorboard --logdir=./output/0724-2221/log/
         then CTRL+C click the url in the terminal
         '''
         self.summary_writer = SummaryWriter(self.log_path)
@@ -36,7 +38,12 @@ class Logger(object):
         self.summary_writer.add_scalar(data_name, data, time_stamp)
     
     def save_to_csv(self, filename, save_path = None):
-        output_df = pd.DataFrame(self.mem_dict)
+        '''
+        csv 要求数组长度一致，mem_dict中的数组长度不一定一致，故分开保存
+        '''
+        new_dict = {}
+        new_dict[filename] = self.mem_dict[filename]
+        output_df = pd.DataFrame(new_dict)
         if save_path:
             self.mkdir(save_path)    
             output_df.to_csv(os.path.join(save_path, '{}.csv'.format(filename)), float_format='%.4f', index=False)
@@ -59,11 +66,18 @@ class Logger(object):
         self.mem_dict[data_name].append(data)
         if auto_save:
             self.save_to_csv(data_name)
-            self.save_to_json(data_name)
+            self.save_to_json('data')
 
     def plot(self):
         # wait to write/add/supply/update
-        pass
+        self.mkdir(self.fig_path)
+        for key, value in self.mem_dict.items():
+            fig = plt.figure()
+            x = [i for i in range(len(value))]
+            plt.plot(x, value)
+            plt.xlabel('x')
+            plt.ylabel(key)
+            plt.savefig(os.path.join(self.fig_path, '{}.png'.format(key)))
 
 
 
@@ -76,5 +90,8 @@ if __name__ == "__main__":
         data = 2 * i
         logger.log_info(data_name = 'index', data = data, time_stamp = i)
         logger.save_data(data_name = 'index', data = i)
-    # logger.save_to_csv(filename = 'test')
+        logger.log_info(data_name = 'test', data = 4*i, time_stamp = i)
+        logger.save_data(data_name = 'test', data = 4*i)
+    logger.plot()
+    # logger.save_to_csv(filename = 'test')     # auto save
     # logger.save_to_json(filename = 'test')
