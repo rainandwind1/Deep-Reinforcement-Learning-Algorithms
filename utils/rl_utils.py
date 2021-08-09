@@ -25,7 +25,7 @@ class Logger(object):
         '''
         使用：tensorboard --logdir=yourlogpath
         command example: tensorboard --logdir=./output/0724-2221/log/
-        then CTRL+C click the url in the terminal
+        then CTRL click the url in the terminal
         '''
         self.summary_writer = SummaryWriter(self.log_path)
         self.mem_dict = {}
