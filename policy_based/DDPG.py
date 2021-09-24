@@ -4,7 +4,7 @@ import sys
 import gym
 
 sys.path.append("./")
-from base_net.model import *
+from algorithms.base_net.model import *
 from torch import nn, optim
 
 
@@ -16,6 +16,9 @@ class DDPG(nn.Module):
         
         self.actor = Policy_net(args = (self.input_size, self.output_size))
         self.critic = Q_net(args = (self.input_size + self.output_size, 1))
+        
+        # activate func
+        self.activate_function = "tanh"
         
         # target
         self.target_actor = Policy_net(args = (self.input_size, self.output_size))
@@ -39,14 +42,22 @@ class DDPG(nn.Module):
 
     def get_policy_op(self, inputs):
         raw_op = self.actor(inputs)
-        op = torch.tanh(raw_op) * (self.action_max - self.action_min) / 2
+        if self.activate_function == "tanh":
+            op = torch.tanh(raw_op) * (self.action_max - self.action_min) / 2
+        elif self.activate_function == "sigmoid":
+            op = torch.sigmoid(raw_op) * (self.action_max - self.action_min) + self.action_min
         if self.clamp:
             op = torch.clamp(op, self.action_min, self.action_max)
         return op
 
     def get_target_policy_op(self, inputs):
         raw_op = self.target_actor(inputs)
+        if self.activate_function == "tanh":
+            op = torch.tanh(raw_op) * (self.action_max - self.action_min) / 2
+        elif self.activate_function == "sigmoid":
+            op = torch.sigmoid(raw_op) * (self.action_max - self.action_min) + self.action_min
         op = torch.tanh(raw_op) * (self.action_max - self.action_min) / 2
+        # op = torch.sigmoid(raw_op) * (self.action_max - self.action_min) + self.action_min
         if self.clamp:
             op = torch.clamp(op, self.action_min, self.action_max)
         return op
@@ -54,7 +65,7 @@ class DDPG(nn.Module):
     def select_action(self, inputs, epsilon, eval_mode = False):
         actor_op = self.get_policy_op(inputs)
         noise = torch.randn(actor_op.shape).to(self.device) if not eval_mode else 0.        # Gaussi noise
-        # actor_op += noise * epsilon
+        actor_op += noise * epsilon
         if self.clamp:
             actor_op = torch.clamp(actor_op, self.action_min, self.action_max)
         return actor_op.detach().cpu().numpy()
@@ -84,6 +95,7 @@ class DDPG(nn.Module):
         loss = -actor_loss.mean() + critic_loss.mean()
         self.optimizer.zero_grad()
         loss.backward()
+        torch.nn.utils.clip_grad_norm_(self.parameters(), 10)
         self.optimizer.step()
         
         self.update_target_net()
