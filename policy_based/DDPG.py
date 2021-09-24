@@ -53,7 +53,6 @@ class DDPG(nn.Module):
 
     def select_action(self, inputs, epsilon, eval_mode = False):
         actor_op = self.get_policy_op(inputs)
-        actor_op = torch.tanh(actor_op) * (self.action_max - self.action_min) / 2
         noise = torch.randn(actor_op.shape).to(self.device) if not eval_mode else 0.        # Gaussi noise
         # actor_op += noise * epsilon
         if self.clamp:
