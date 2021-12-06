@@ -56,7 +56,7 @@ class DDPG(nn.Module):
             op = torch.tanh(raw_op) * (self.action_max - self.action_min) / 2
         elif self.activate_function == "sigmoid":
             op = torch.sigmoid(raw_op) * (self.action_max - self.action_min) + self.action_min
-        op = torch.tanh(raw_op) * (self.action_max - self.action_min) / 2
+        # op = torch.tanh(raw_op) * (self.action_max - self.action_min) / 2
         # op = torch.sigmoid(raw_op) * (self.action_max - self.action_min) + self.action_min
         if self.clamp:
             op = torch.clamp(op, self.action_min, self.action_max)
