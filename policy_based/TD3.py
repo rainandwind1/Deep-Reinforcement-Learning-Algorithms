@@ -12,7 +12,7 @@ from torch.distributions import Categorical
 class TD3(nn.Module):
     def __init__(self, args):
         super(TD3, self).__init__()
-        self.input_size, self.output_size, self.clamp, self.action_max, self.action_min, self.mem_size, self.toi, self.device, self.lr = args
+        self.input_size, self.output_size, self.clamp, self.action_max, self.action_min, self.mem_size, self.toi, self.device, self.actor_lr, self.critic_lr = args
         self.critic_update_cnt = 0
 
         self.actor = Policy_net(args = (self.input_size, self.output_size))
@@ -24,7 +24,8 @@ class TD3(nn.Module):
         self.target_critic2 = Q_net(args = (self.input_size + self.output_size, 1))
 
         self.replay_buffer = ReplayBuffer(args = (self.mem_size))
-        self.optimizer = optim.Adam([{'params':self.actor.parameters()}, {'params':self.critic1.parameters()}, {'params':self.critic2.parameters()}], lr = self.lr)
+        self.optimizer_actor = optim.Adam(self.actor.parameters(), lr = self.actor_lr)
+        self.optimizer_critic = optim.Adam(self.parameters(), lr = self.critic_lr)
         self.update_target_net(initialize = True)
 
     def update_target_net(self, initialize = False):
@@ -84,18 +85,19 @@ class TD3(nn.Module):
         q_val2 = self.critic2(torch.cat([s, a], -1))
         action_next = self.get_target_policy(s_next).detach()
         target_q_val = r + gamma * torch.min(self.target_critic1(torch.cat([s_next, action_next], -1)), self.target_critic2(torch.cat([s_next, action_next], -1))) * (1 - done)
-        loss_critic = (target_q_val.detach() - q_val1) ** 2 + (target_q_val.detach() - q_val2) ** 2
+        loss_critic = ((target_q_val.detach() - q_val1) ** 2 + (target_q_val.detach() - q_val2) ** 2).mean()
 
         if (self.critic_update_cnt + 1) % policy_update_interval == 0:
             loss_actor = (- self.critic1(torch.cat([s, self.get_policy(s)], -1))).mean()
+            self.optimizer_actor.zero_grad()
+            loss_actor.backward()
+            self.optimizer_actor.step()
             self.update_target_net()
-        else:
-            loss_actor = 0.
 
-        loss = loss_actor + loss_critic.mean()
-        self.optimizer.zero_grad()
-        loss.backward()
-        self.optimizer.step()
+
+        self.optimizer_critic.zero_grad()
+        loss_critic.backward()
+        self.optimizer_critic.step()
 
         self.critic_update_cnt += 1
 
@@ -107,7 +109,7 @@ TD3 test
 if __name__ == "__main__":
     env = gym.make("Pendulum-v0")
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    model = TD3(args = (3, 2, True, 2, -2, 30000, 0.01, device, 1e-3)).to(device)
+    model = TD3(args = (3, 2, True, 2, -2, 30000, 0.01, device, 1e-3, 1e-3)).to(device)
     total_step = 0
     epsilon = 0.3
     for i in range(10000):
@@ -126,4 +128,4 @@ if __name__ == "__main__":
                 model.train()
             if done:
                 break
-        print("Epoch:{}    Score:{}".format(i+1, score))
+        print("Epoch:{}    Score:{}    epsilon:{:.3}".format(i+1, score, epsilon))

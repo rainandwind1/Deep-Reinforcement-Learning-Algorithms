@@ -11,7 +11,7 @@ from torch import nn, optim
 class DDPG(nn.Module):
     def __init__(self, args):
         super(DDPG, self).__init__()
-        self.input_size, self.output_size, self.mem_size, self.clamp, self.action_max, self.action_min, self.device, self.lr = args
+        self.input_size, self.output_size, self.mem_size, self.clamp, self.action_max, self.action_min, self.device, self.actor_lr, self.critic_lr = args
         self.toi = 0.01
         
         self.actor = Policy_net(args = (self.input_size, self.output_size))
@@ -25,8 +25,8 @@ class DDPG(nn.Module):
         self.target_critic = Q_net(args = (self.input_size + self.output_size, 1))
 
         self.replay_buffer = ReplayBuffer(args = (self.mem_size))
-        self.optimizer_actor = optim.Adam(self.actor.parameters(), self.lr)
-        self.optimizer_critic = optim.Adam(self.critic.parameters(), self.lr)
+        self.optimizer_actor = optim.Adam(self.actor.parameters(), self.actor_lr)
+        self.optimizer_critic = optim.Adam(self.critic.parameters(), self.critic_lr)
         # self.optimizer = optim.Adam([{'params':self.actor.parameters()}, {'params':self.critic.parameters()}], lr = self.lr)
         self.update_target_net(initialize = True)
 
@@ -122,7 +122,7 @@ if __name__ == "__main__":
 
     total_step = 0
     env = gym.make("Pendulum-v0")   
-    model = DDPG(args = (3, 2, 30000, True, 2, -2, device, 1e-3)).to(device)
+    model = DDPG(args = (3, 2, 30000, True, 2, -2, device, 1e-3, 1e-3)).to(device)
 
     for i in range(10000):
         s = env.reset()

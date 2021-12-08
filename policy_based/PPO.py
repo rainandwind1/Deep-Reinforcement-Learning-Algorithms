@@ -13,12 +13,13 @@ from torch.distributions import Categorical
 class PPO(nn.Module):
     def __init__(self, args):
         super(PPO, self).__init__()
-        self.input_size, self.output_size, self.device, self.lr = args
+        self.input_size, self.output_size, self.device, self.actor_lr, self.critic_lr = args
         self.actor = Policy_net(args = (self.input_size, self.output_size))
         self.critic = Q_net(args = (self.input_size, self.output_size))
 
         self.buffer = ReplayBuffer(args = (10000))
-        self.optimizer = optim.Adam(self.parameters(), lr = self.lr)
+        self.optimizer_actor = optim.Adam(self.actor.parameters(), lr = self.actor_lr)
+        self.optimizer_critic = optim.Adam(self.critic.parameters(), lr = self.critic_lr)
 
     def get_policy_op(self, inputs):
         policy_op = self.actor(inputs)
@@ -64,13 +65,19 @@ class PPO(nn.Module):
             policy_op = policy_op.gather(-1, a)
             ratio = torch.exp(torch.log(policy_op) - torch.log(a_prob))
 
-            sur1 = ratio * advantage
-            sur2 = torch.clamp(ratio, 1 - epsilon_clip, 1 + epsilon_clip) * advantage
-            loss = (- torch.min(sur1, sur2) + F.smooth_l1_loss(self.critic(s), td_target.detach())).mean()
+            sur1 = ratio * advantage.detach()
+            sur2 = torch.clamp(ratio, 1 - epsilon_clip, 1 + epsilon_clip) * advantage.detach()
+            loss_actor = (- torch.min(sur1, sur2)).mean()
+            self.optimizer_actor.zero_grad()
+            loss_actor.backward()
+            self.optimizer_actor.step()
 
-            self.optimizer.zero_grad()
-            loss.backward()
-            self.optimizer.step()
+
+            loss_critic = (F.smooth_l1_loss(self.critic(s), td_target.detach())).mean()
+
+            self.optimizer_critic.zero_grad()
+            loss_critic.backward()
+            self.optimizer_critic.step()
 
         self.buffer.clear()
 
@@ -86,7 +93,7 @@ if __name__ == "__main__":
 
 
     env = gym.make("CartPole-v1")
-    model = PPO(args = (4, 2, device, lr)).to(device)
+    model = PPO(args = (4, 2, device, lr, lr)).to(device)
     score = 0.
     
     for epo_i in range(10000):

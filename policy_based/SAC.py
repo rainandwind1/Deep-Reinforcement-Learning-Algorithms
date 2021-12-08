@@ -12,7 +12,7 @@ from torch.distributions import Categorical, Normal
 class SAC(nn.Module):
     def __init__(self, args):
         super(SAC, self).__init__()
-        self.input_size, self.output_size, self.toi, self.device, self.lr = args
+        self.input_size, self.output_size, self.toi, self.device, self.actor_lr, self.critic_lr = args
         self.min_log_std, self.max_log_std = -20, 2
         # policy
         self.actor = Policy_net(args = (self.input_size, 64))
@@ -26,7 +26,8 @@ class SAC(nn.Module):
         self.v_net_target = Q_net(args = (self.input_size, 1))
 
         self.replay_buffer = ReplayBuffer(args = (30000))
-        self.optimizer = optim.Adam(self.parameters(), lr = self.lr)    
+        self.optimizer_actor = optim.Adam(self.actor.parameters(), lr = self.actor_lr)
+        self.optimizer_critic = optim.Adam(self.parameters(), lr = self.critic_lr)    
         self.update_target_net(initialize = True)
 
     def update_target_net(self, initialize = False):
@@ -81,16 +82,20 @@ class SAC(nn.Module):
         v_target = torch.min(self.q_net1(torch.cat([s, rsample_action], -1)), self.q_net2(torch.cat([s, rsample_action], -1))) - alpha * log_action_prob
         loss_v_net = (self.v_net(s) - v_target.detach()) ** 2
         # loss actor  gradient ascent
-        loss_actor = -(self.q_net1(torch.cat([s, rsample_action], -1)) - alpha * log_action_prob)
+        loss_actor = (-(self.q_net1(torch.cat([s, rsample_action], -1)) - alpha * log_action_prob)).mean()
+        self.optimizer_actor.zero_grad()
+        loss_actor.backward()
+        self.optimizer_actor.step()
+
         # loss q_net
         q_target = r + gamma * self.v_net_target(s_next) * (1 - done)                     # have problem
         loss_q_net1 = (self.q_net1(torch.cat([s, a], -1)) - q_target.detach()) ** 2
         loss_q_net2 = (self.q_net2(torch.cat([s, a], -1)) - q_target.detach()) ** 2
 
-        loss = loss_actor.mean() + loss_q_net1.mean() + loss_q_net2.mean() + loss_v_net.mean()
-        self.optimizer.zero_grad()
-        loss.backward()
-        self.optimizer.step()
+        loss_critic = loss_q_net1.mean() + loss_q_net2.mean() + loss_v_net.mean()
+        self.optimizer_critic.zero_grad()
+        loss_critic.backward()
+        self.optimizer_critic.step()
 
         self.update_target_net()
 
@@ -128,7 +133,7 @@ if __name__ == "__main__":
 
     total_step = 0
     env = NormalizedActions(gym.make("Pendulum-v0"))   
-    model = SAC(args = (3, 1, 0.01, device, lr)).to(device)
+    model = SAC(args = (3, 1, 0.01, device, lr, lr)).to(device)
 
     for i in range(10000):
         s = env.reset()

@@ -58,7 +58,7 @@ if __name__ == "__main__":
     episode_cnt = 0
 
     envs = make_envs(thread_num)
-    model = ActorCritic(args = (4, 2, device, lr)).to(device)
+    model = ActorCritic(args = (4, 2, device, lr, lr)).to(device)
 
     while True:
         thread_list = []
