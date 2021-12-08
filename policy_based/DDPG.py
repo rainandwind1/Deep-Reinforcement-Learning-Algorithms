@@ -4,7 +4,7 @@ import sys
 import gym
 
 sys.path.append("./")
-from algorithms.base_net.model import *
+from base_net.model import *
 from torch import nn, optim
 
 
@@ -25,7 +25,9 @@ class DDPG(nn.Module):
         self.target_critic = Q_net(args = (self.input_size + self.output_size, 1))
 
         self.replay_buffer = ReplayBuffer(args = (self.mem_size))
-        self.optimizer = optim.Adam([{'params':self.actor.parameters()}, {'params':self.critic.parameters()}], lr = self.lr)
+        self.optimizer_actor = optim.Adam(self.actor.parameters(), self.lr)
+        self.optimizer_critic = optim.Adam(self.critic.parameters(), self.lr)
+        # self.optimizer = optim.Adam([{'params':self.actor.parameters()}, {'params':self.critic.parameters()}], lr = self.lr)
         self.update_target_net(initialize = True)
 
     def update_target_net(self, initialize = False):
@@ -56,8 +58,6 @@ class DDPG(nn.Module):
             op = torch.tanh(raw_op) * (self.action_max - self.action_min) / 2
         elif self.activate_function == "sigmoid":
             op = torch.sigmoid(raw_op) * (self.action_max - self.action_min) + self.action_min
-        # op = torch.tanh(raw_op) * (self.action_max - self.action_min) / 2
-        # op = torch.sigmoid(raw_op) * (self.action_max - self.action_min) + self.action_min
         if self.clamp:
             op = torch.clamp(op, self.action_min, self.action_max)
         return op
@@ -65,6 +65,7 @@ class DDPG(nn.Module):
     def select_action(self, inputs, epsilon, eval_mode = False):
         actor_op = self.get_policy_op(inputs)
         noise = torch.randn(actor_op.shape).to(self.device) if not eval_mode else 0.        # Gaussi noise
+        # print(actor_op, noise * epsilon)
         actor_op += noise * epsilon
         if self.clamp:
             actor_op = torch.clamp(actor_op, self.action_min, self.action_max)
@@ -87,18 +88,26 @@ class DDPG(nn.Module):
         s, a, r, s_next, done = self.to_tensor(self.replay_buffer.sample_batch(batch_size=batch_size))
         # cal policy loss
         actor_loss = self.critic(torch.cat([s, self.get_policy_op(s)], -1))
+        actor_loss = -actor_loss.mean()
+        self.optimizer_actor.zero_grad()
+        actor_loss.backward()
+        self.optimizer_actor.step()
+
+
         # cal critic loss
         q_val = self.critic(torch.cat([s, a] ,-1))
         target_q_val = r + gamma * self.target_critic(torch.cat([s_next, self.get_target_policy_op(s_next).detach()], -1)) * (1 - done)
         critic_loss = (q_val - target_q_val.detach()) ** 2
+        critic_loss = critic_loss.mean()
 
-        loss = -actor_loss.mean() + critic_loss.mean()
-        self.optimizer.zero_grad()
-        loss.backward()
-        torch.nn.utils.clip_grad_norm_(self.parameters(), 10)
-        self.optimizer.step()
+        self.optimizer_critic.zero_grad()
+        critic_loss.backward()
+        self.optimizer_critic.step()
         
+        loss = actor_loss + critic_loss
         self.update_target_net()
+
+        return loss.detach().cpu().numpy()
 
 '''
 DDPG test
