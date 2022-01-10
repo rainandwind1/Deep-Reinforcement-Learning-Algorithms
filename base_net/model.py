@@ -144,7 +144,7 @@ class ReplayBuffer(object):
         elif episode_data:  
             for item in transition:
                 if len(item) < max_len:
-                    item += [[0] * len(item[0])] * (max_len - len(item))
+                    item += [[0 for _ in range(len(item[0]))] for _ in range(max_len - len(item))]
             self.buffer.append(transition)
 
     def sample_batch(self, batch_size = 32):
