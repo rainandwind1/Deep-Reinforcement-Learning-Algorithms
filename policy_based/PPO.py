@@ -15,7 +15,7 @@ class PPO(nn.Module):
         super(PPO, self).__init__()
         self.input_size, self.output_size, self.device, self.actor_lr, self.critic_lr = args
         self.actor = Policy_net(args = (self.input_size, self.output_size))
-        self.critic = Q_net(args = (self.input_size, self.output_size))
+        self.critic = Q_net(args = (self.input_size, 1))
 
         self.buffer = ReplayBuffer(args = (10000))
         self.optimizer_actor = optim.Adam(self.actor.parameters(), lr = self.actor_lr)
