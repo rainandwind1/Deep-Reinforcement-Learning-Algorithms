@@ -21,7 +21,7 @@ class ActorCritic(nn.Module):
         self.optimizer_critic = optim.Adam(self.critic.parameters(), lr = self.critic_lr)     
         
     def get_policy(self, inputs):
-        return F.softmax(self.actor(inputs))
+        return F.softmax(self.actor(inputs), -1)
 
     def save_trans(self, transition):
         self.buffer.save_trans(transition)
